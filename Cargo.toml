@@ -1,0 +1,30 @@
+[package]
+name = "webrtc-sctp"
+version = "0.0.0"
+authors = ["David Simmons <simmons@davidsimmons.com>"]
+license = "MIT/Apache-2.0"
+repository = "https://github.com/simmons/webrtc-sctp"
+keywords = ["webrtc", "sctp" ]
+categories = ["network-programming"]
+description = "A pure-Rust userspace SCTP implementation"
+readme = "README.md"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+nom = "4.0"
+crc = "1.8"
+bytes = "0.4"
+futures = "0.1"
+tokio-core = "0.1"
+tokio-io = "0.1"
+tokio-timer="0.1"
+rand = "0.5"
+blake2 = "0.7"
+time = "0.1"
+byteorder = "1.2"
+log = "0.4"
+
+[dev-dependencies]
+env_logger = "0.5"
