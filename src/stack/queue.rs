@@ -373,7 +373,7 @@ impl OutgoingDataQueue {
 
     pub fn push(&mut self, mut chunk: DataChunk) {
         // This condition is only because tracking keeps the buffer's bytes even if the insert()
-        // drops the chunk due to an existing chunk having the same TSN.  The buffer's internal Rc
+        // drops the chunk due to an existing chunk having the same TSN.  The buffer's internal Arc
         // has a reference count of 2 on drop, so it has another owner.  There's a bug here
         // somewhere.
         // TODO: Remove this conditional, fix the bug, and confirm tests pass.

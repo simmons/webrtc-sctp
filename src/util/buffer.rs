@@ -1,33 +1,32 @@
-use std::cell::RefCell;
 use std::cmp::PartialEq;
 use std::fmt::{self, Debug, Formatter};
 use std::ops::Deref;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 /// A Buffer wraps a Vec<u8> and provides a means of tracking the total byte usage of certain
 /// classes of data.  This is used to determine our receiver window, among other things.
 #[derive(Clone)]
 pub struct Buffer {
-    data: Rc<Vec<u8>>,
+    data: Arc<Vec<u8>>,
     tracker: Option<BufferTracker>,
 }
 
 impl Buffer {
     pub fn new(slice: &[u8]) -> Buffer {
         Buffer {
-            data: Rc::new(slice.to_vec()),
+            data: Arc::new(slice.to_vec()),
             tracker: None,
         }
     }
     pub fn from_vec(vec: Vec<u8>) -> Buffer {
         Buffer {
-            data: Rc::new(vec),
+            data: Arc::new(vec),
             tracker: None,
         }
     }
     pub fn empty() -> Buffer {
         Buffer {
-            data: Rc::new(vec![]),
+            data: Arc::new(vec![]),
             tracker: None,
         }
     }
@@ -68,7 +67,7 @@ impl Buffer {
 
 impl Drop for Buffer {
     fn drop(&mut self) {
-        if Rc::strong_count(&self.data) == 1 {
+        if Arc::strong_count(&self.data) == 1 {
             if let Some(ref tracker) = self.tracker {
                 tracker.subtract(self.data.len());
             }
@@ -98,7 +97,7 @@ impl PartialEq for Buffer {
 
 #[derive(Clone)]
 pub struct BufferTracker {
-    inner: Rc<RefCell<Inner>>,
+    inner: Arc<Mutex<Inner>>,
 }
 
 struct Inner {
@@ -109,26 +108,26 @@ struct Inner {
 impl BufferTracker {
     pub fn new() -> BufferTracker {
         BufferTracker {
-            inner: Rc::new(RefCell::new(Inner { count: 0, bytes: 0 })),
+            inner: Arc::new(Mutex::new(Inner { count: 0, bytes: 0 })),
         }
     }
 
     pub fn count(&self) -> usize {
-        self.inner.borrow().count
+        self.inner.lock().unwrap().count
     }
 
     pub fn bytes(&self) -> usize {
-        self.inner.borrow().bytes
+        self.inner.lock().unwrap().bytes
     }
 
     fn add(&self, bytes: usize) {
-        let mut inner = self.inner.borrow_mut();
+        let mut inner = self.inner.lock().unwrap();
         inner.count += 1;
         inner.bytes += bytes;
     }
 
     fn subtract(&self, bytes: usize) {
-        let mut inner = self.inner.borrow_mut();
+        let mut inner = self.inner.lock().unwrap();
         inner.count -= 1;
         inner.bytes -= bytes;
     }
