@@ -434,6 +434,7 @@ impl Future for SctpStack {
         if self.incoming_packet.is_none() {
             match self.incoming_stream.poll() {
                 Ok(Async::Ready(Some(packet))) => {
+                    trace!("Incoming SCTP packet: {:?}", packet.sctp_packet);
                     self.incoming_packet = Some(packet);
                     // poll again
                     futures::task::current().notify();
