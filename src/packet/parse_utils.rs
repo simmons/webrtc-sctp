@@ -30,7 +30,7 @@ macro_rules! parse_tlv (
                                 // Account for padding
                                 let padding = (4 - length % 4) % 4;
                                 let padded_length = length + padding;
-                                if padded_length > i.len() {
+                                if length > i.len() {
                                     // not incomplete -- we should always have the full TLV
                                     Err(Err::Error(Context::Code(i,ErrorKind::Custom(0))))
                                 } else {
@@ -38,7 +38,13 @@ macro_rules! parse_tlv (
                                     // (not including padding) and the rest of the input stream
                                     // which follows any trailing padding.
                                     let value_data = &i[..length];
-                                    let remaining_input = &i[padded_length..];
+                                    let total_length = i.len();
+                                    let remaining_input = if padded_length <= total_length {
+                                        &i[padded_length..]
+                                    } else {
+                                        // The last item is allowed to omit padding
+                                        &i[i.len()..]
+                                    };
 
                                     // Dispatch
                                     match $dispatch_function(tag, value_data) {
