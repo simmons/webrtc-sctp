@@ -2,6 +2,8 @@
 //! the SCTP stack.
 
 use std::net::SocketAddr;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize,Ordering};
 
 use futures::sync::mpsc;
 use futures::sync::oneshot;
@@ -73,6 +75,7 @@ pub struct AssociationHandle {
     command_tx: mpsc::Sender<AssociationCommand>,
     accept_queue: Option<futures::stream::Wait<AcceptQueueReceiver>>,
     closed: bool,
+    count: Arc<AtomicUsize>,
 }
 
 impl AssociationHandle {
@@ -84,6 +87,7 @@ impl AssociationHandle {
             command_tx,
             accept_queue: accept_queue_rx.map(|rx| rx.wait()),
             closed: false,
+            count: Arc::new(AtomicUsize::new(1)),
         }
     }
 
@@ -190,8 +194,25 @@ impl AssociationHandle {
     }
 }
 
+impl Clone for AssociationHandle {
+    /// Clone an `AssociationHandle`.  Clones don't have an accept queue, so cannot `accept()`, but
+    /// otherwise should be functional.
+    fn clone(&self) -> Self {
+        let count = self.count.fetch_add(1, Ordering::SeqCst);
+        AssociationHandle {
+            command_tx: self.command_tx.clone(),
+            accept_queue: None,
+            closed: self.closed,
+            count: self.count.clone(),
+        }
+    }
+}
+
 impl Drop for AssociationHandle {
     fn drop(&mut self) {
-        self.abort().unwrap_or(());
+        let count = self.count.fetch_sub(1, Ordering::SeqCst) - 1;
+        if count == 0 {
+            self.abort().unwrap_or(());
+        }
     }
 }
