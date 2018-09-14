@@ -342,8 +342,10 @@ impl Future for SctpStack {
                     // layer, there is only us and the peer.  Should SctpStack be generic over an
                     // LLP, so per-stack and per-association LLP parameters only include what is
                     // needed?
-                    let llp_destination =
-                        SocketAddr::new(destination.ip(), UdpLowerLayer::SCTP_UDP_TUNNELING_PORT_OUTGOING);
+                    let llp_destination = SocketAddr::new(
+                        destination.ip(),
+                        UdpLowerLayer::SCTP_UDP_TUNNELING_PORT_OUTGOING,
+                    );
 
                     let association = Association::connect(
                         self.resources.clone(),

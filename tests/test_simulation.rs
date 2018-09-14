@@ -20,13 +20,13 @@ use std::net::SocketAddr;
 use std::thread;
 use std::time::Duration;
 
+use simulation::filter;
+use simulation::Simulation;
 use webrtc_sctp::error::{SctpError, SctpResult};
 use webrtc_sctp::stack::association::AssociationCommand;
 use webrtc_sctp::stack::sync::AssociationHandle;
 use webrtc_sctp::stack::Timeout;
 use webrtc_sctp::UserMessage;
-use simulation::filter;
-use simulation::Simulation;
 
 const LISTEN_PORT: u16 = 2000;
 const TIMEOUT_MS: u64 = 200;
