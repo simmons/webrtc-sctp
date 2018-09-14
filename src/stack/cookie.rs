@@ -6,11 +6,10 @@ use blake2::crypto_mac::Mac;
 use blake2::Blake2b;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use rand::{self, RngCore};
-use std::cell::RefCell;
 use std::io;
 use std::io::{Cursor, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 use time;
 
 use super::settings::DEFAULT_SCTP_PARAMETERS;
@@ -31,7 +30,7 @@ struct CookieTime {
 /// still be verified (until the next regeneration, of course).
 #[derive(Clone)]
 pub struct Secret {
-    inner: Rc<RefCell<SecretInner>>,
+    inner: Arc<Mutex<SecretInner>>,
 }
 
 struct SecretInner {
@@ -56,7 +55,7 @@ impl Secret {
             + DEFAULT_SCTP_PARAMETERS.secret_key_regeneration_interval * NANOSECONDS_IN_MILLISECOND;
 
         Secret {
-            inner: Rc::new(RefCell::new(SecretInner {
+            inner: Arc::new(Mutex::new(SecretInner {
                 key,
                 previous_key,
                 generation_time,
@@ -67,7 +66,7 @@ impl Secret {
     }
 
     fn regenerate(&self) {
-        let mut inner = self.inner.borrow_mut();
+        let mut inner = self.inner.lock().unwrap();
         inner.previous_key = inner.key;
         inner.has_previous = true;
         rand::thread_rng().fill_bytes(&mut inner.key);
@@ -75,7 +74,7 @@ impl Secret {
     }
 
     fn regenerate_if_needed(&self) {
-        let inner = self.inner.borrow();
+        let inner = self.inner.lock().unwrap();
         if time::precise_time_ns() >= inner.expiration_time {
             drop(inner);
             self.regenerate();
@@ -85,7 +84,7 @@ impl Secret {
     fn mac(&self, buffer: &[u8]) -> [u8; BLAKE2B_MAC_SIZE] {
         self.regenerate_if_needed();
 
-        let inner = self.inner.borrow();
+        let inner = self.inner.lock().unwrap();
         let mut hasher = Blake2b::new(&inner.key).unwrap();
         hasher.input(buffer);
         let mut mac = [0u8; BLAKE2B_MAC_SIZE];
@@ -101,7 +100,7 @@ impl Secret {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "bad MAC"));
         }
 
-        let inner = self.inner.borrow();
+        let inner = self.inner.lock().unwrap();
         let key = if timestamp < inner.generation_time {
             &inner.previous_key
         } else {
@@ -122,7 +121,7 @@ use std::fmt;
 pub struct Hex<'a>(&'a [u8]);
 impl fmt::Debug for Secret {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let inner = self.inner.borrow();
+        let inner = self.inner.lock().unwrap();
         writeln!(f, "Secret: generation_time={} key:", inner.generation_time)?;
         util::hexdump(f, "\t", &inner.key)?;
         writeln!(f, "")?;
