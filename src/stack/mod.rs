@@ -100,6 +100,8 @@ pub enum SctpCommand {
     Exit(oneshot::Sender<()>),
 }
 
+pub type SctpCommandTx = mpsc::Sender<SctpCommand>;
+
 impl SctpStack {
     pub fn new(tokio: Handle) -> SctpStack {
         let lower_layer = UdpLowerLayer::new(tokio);
@@ -162,6 +164,10 @@ impl SctpStack {
 
     pub fn handle(&self) -> SctpHandle {
         SctpHandle::new(self.command_tx.clone())
+    }
+
+    pub fn command_tx(&self) -> SctpCommandTx {
+        self.command_tx.clone()
     }
 
     // The Internet Assigned Numbers Authority (IANA) suggests the range 49152 to 65535 (215+214 to
