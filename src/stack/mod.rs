@@ -64,7 +64,6 @@ impl Timeout {
 /// lightweight fashion.
 #[derive(Clone)]
 pub struct StackResources {
-    tokio: Handle,
     timer: tokio_timer::Timer,
     secret: Secret,
 }
@@ -103,11 +102,11 @@ pub enum SctpCommand {
 
 impl SctpStack {
     pub fn new(tokio: Handle) -> SctpStack {
-        let lower_layer = UdpLowerLayer::new(tokio.clone());
-        Self::new_with_lower_layer(tokio, Box::new(lower_layer))
+        let lower_layer = UdpLowerLayer::new(tokio);
+        Self::new_with_lower_layer(Box::new(lower_layer))
     }
 
-    pub fn new_with_lower_layer(tokio: Handle, lower_layer: Box<LowerLayer>) -> SctpStack {
+    pub fn new_with_lower_layer(lower_layer: Box<LowerLayer>) -> SctpStack {
         let (command_tx, command_rx) = mpsc::channel::<SctpCommand>(0);
         let (stack_accept_tx, stack_accept_rx) =
             mpsc::channel::<StackAcceptItem>(DEFAULT_ACCEPT_QUEUE_SIZE);
@@ -143,7 +142,6 @@ impl SctpStack {
 
         SctpStack {
             resources: StackResources {
-                tokio: tokio.clone(),
                 timer: timer,
                 secret: secret,
             },

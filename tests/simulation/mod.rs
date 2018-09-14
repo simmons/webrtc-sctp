@@ -125,7 +125,7 @@ impl Simulation {
                 let mut sctp_futures = vec![];
                 for lower_layer in lower_layers {
                     let address = lower_layer.address();
-                    let sctp_stack = SctpStack::new_with_lower_layer(core.handle(), lower_layer);
+                    let sctp_stack = SctpStack::new_with_lower_layer(lower_layer);
                     hosts.push(Host {
                         address,
                         handle: sctp_stack.handle(),
