@@ -122,7 +122,10 @@ impl SctpStack {
         // SctpPacket data structures into byte buffers.
         let outgoing_future = Box::new(
             outgoing_rx
-                .map(|packet| packet_to_lower_layer(&packet))
+                .map(|packet| {
+                    trace!("Outgoing SCTP packet: {:?}", packet.sctp_packet);
+                    packet_to_lower_layer(&packet)
+                })
                 .map_err(|_| io::Error::new(io::ErrorKind::Other, "outgoing"))
                 .forward(lower_layer_sink)
                 .map(|_| ()),
