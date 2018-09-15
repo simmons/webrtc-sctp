@@ -123,7 +123,6 @@ impl SctpStack {
         let outgoing_future = Box::new(
             outgoing_rx
                 .map(|packet| {
-                    trace!("Outgoing SCTP packet: {:?}", packet.sctp_packet);
                     packet_to_lower_layer(&packet)
                 })
                 .map_err(|_| io::Error::new(io::ErrorKind::Other, "outgoing"))
@@ -437,7 +436,6 @@ impl Future for SctpStack {
         if self.incoming_packet.is_none() {
             match self.incoming_stream.poll() {
                 Ok(Async::Ready(Some(packet))) => {
-                    trace!("Incoming SCTP packet: {:?}", packet.sctp_packet);
                     self.incoming_packet = Some(packet);
                     // poll again
                     futures::task::current().notify();
