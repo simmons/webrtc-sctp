@@ -198,7 +198,7 @@ impl Clone for AssociationHandle {
     /// Clone an `AssociationHandle`.  Clones don't have an accept queue, so cannot `accept()`, but
     /// otherwise should be functional.
     fn clone(&self) -> Self {
-        let count = self.count.fetch_add(1, Ordering::SeqCst);
+        self.count.fetch_add(1, Ordering::SeqCst);
         AssociationHandle {
             command_tx: self.command_tx.clone(),
             accept_queue: None,
